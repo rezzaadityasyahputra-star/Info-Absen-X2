@@ -70,7 +70,7 @@
       animation: fadeInUp 0.6s ease;
     }
 
-    /* Grid Statistik (Kiri Atas & Kanan Atas) */
+    /* Statistik Kiri (Total) & Kanan (Sudah Absen) */
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -102,13 +102,8 @@
       line-height: 1.2;
     }
 
-    .stat-card.total .stat-number {
-      color: #475569;
-    }
-
-    .stat-card.hadir .stat-number {
-      color: #2563eb;
-    }
+    .stat-card.total .stat-number { color: #475569; }
+    .stat-card.hadir .stat-number { color: #2563eb; }
 
     .stat-label {
       font-size: 0.8rem;
@@ -268,7 +263,7 @@
 
   <div class="container">
     
-    <!-- Statistik: Kiri Total Siswa (28), Kanan Siswa Absen/Hadir -->
+    <!-- Statistik: Kiri Total Siswa, Kanan Siswa Absen/Hadir -->
     <div class="stats-grid">
       <div class="stat-card total">
         <div class="stat-number" id="total-kapasitas">28</div>
@@ -280,7 +275,7 @@
       </div>
     </div>
 
-    <!-- Kelola Kode & Reset -->
+    <!-- Panel Buat Kode & Reset -->
     <div class="card">
       <h3 style="margin-bottom: 16px; font-size: 1.1rem;">Kelola Kode Absen</h3>
       
@@ -328,10 +323,9 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0Z3VqaHBvdXB0cWlwY2pjaGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NzI0MzQsImV4cCI6MjEwNDQ0ODQzNH0.BsFpKqtj3sdsnHzJttT_2gDAxyul7ljou5FcU8SnUpc';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Fungsi utama memuat data dari Supabase
     async function loadInfoAbsen() {
       try {
-        // 1. Hitung total seluruh siswa di database
+        // 1. Ambil total seluruh data siswa
         const { count: countTotal, error: errTotal } = await _supabase
           .from('presensi')
           .select('*', { count: 'exact', head: true });
@@ -340,7 +334,7 @@
           document.getElementById('total-kapasitas').innerText = countTotal;
         }
 
-        // 2. Ambil daftar siswa yang statusnya 'Hadir'
+        // 2. Ambil data siswa yang sudah Hadir
         const { data, error } = await _supabase
           .from('presensi')
           .select('*')
@@ -349,10 +343,10 @@
 
         if (error) throw error;
 
-        // Update Counter Kanan Atas (Jumlah Siswa Hadir)
+        // Update hitungan kanan atas
         document.getElementById('total-absen').innerText = data.length;
 
-        // Render data ke tabel
+        // Render ke tabel
         const tbody = document.getElementById('list-absen');
         if (data.length === 0) {
           tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8;">Belum ada siswa yang absen hari ini</td></tr>`;
@@ -374,7 +368,7 @@
       }
     }
 
-    // Buat Kode Absen Custom Baru
+    // Buat Kode Custom
     async function buatKodeAbsen() {
       const kodeInput = document.getElementById('custom-kode').value.trim();
       const codeResult = document.getElementById('code-result');
@@ -394,14 +388,14 @@
 
         codeResult.style.display = 'block';
         codeResult.innerText = `KODE AKTIF: ${kodeInput}`;
-        alert('Kode absen berhasil diaktifkan untuk sesi ini!');
+        alert('Kode absen berhasil diaktifkan!');
       } catch (err) {
         console.error(err);
         alert('Gagal membuat kode baru!');
       }
     }
 
-    // Hapus / Reset Data Absen
+    // Reset Data Absen
     async function hapusSemuaData() {
       if (!confirm('Apakah kamu yakin ingin mereset seluruh data absensi?')) return;
 
@@ -423,7 +417,7 @@
       }
     }
 
-    // REALTIME SUPABASE
+    // Realtime Supabase
     _supabase
       .channel('public:presensi')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'presensi' }, () => {
@@ -431,7 +425,6 @@
       })
       .subscribe();
 
-    // Jalankan saat pertama kali dimuat
     loadInfoAbsen();
   </script>
 </body>
