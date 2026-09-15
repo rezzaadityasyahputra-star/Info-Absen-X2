@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Info Absen X-2</title>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+    }
+
+    /* Header Container */
+    .header {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 24px;
+      animation: fadeInDown 0.6s ease;
+    }
+
+    .logo {
+      position: absolute;
+      left: 0;
+      width: 45px;
+      height: 45px;
+      border-radius: 12px;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease;
+    }
+
+    .logo:hover {
+      transform: scale(1.05);
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+
+    /* Layout Wrapper */
+    .container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeInUp 0.6s ease;
+    }
+
+    /* Grid Statistik (Kiri Atas & Kanan Atas) */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      text-align: center;
+    }
+
+    .stat-card.total {
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      border-color: #cbd5e1;
+    }
+
+    .stat-card.hadir {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border-color: #bfdbfe;
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .stat-card.total .stat-number {
+      color: #475569;
+    }
+
+    .stat-card.hadir .stat-number {
+      color: #2563eb;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .stat-card.total .stat-label { color: #64748b; }
+    .stat-card.hadir .stat-label { color: #1e40af; }
+
+    /* Cards Form & Table */
+    .card {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1.5px solid #cbd5e1;
+      background-color: #ffffff;
+      color: #0f172a;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-blue {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-blue:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: #ffffff;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+    }
+
+    .code-display {
+      margin-top: 12px;
+      background: #f1f5f9;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-family: monospace;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #0f172a;
+      border: 1px dashed #94a3b8;
+    }
+
+    /* Table Realtime */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      background-color: #f8fafc;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .badge-hadir {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    #status-msg {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    /* Animations */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Section -->
+  <div class="header">
+    <img src="https://via.placeholder.com/150" alt="Logo Kelas" class="logo">
+    <h1 class="title">INFO ABSEN-X2</h1>
+  </div>
+
+  <div class="container">
+    
+    <!-- Statistik: Kiri Total Siswa (28), Kanan Siswa Absen/Hadir -->
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-number" id="total-kapasitas">28</div>
+        <div class="stat-label">Total Siswa X-2</div>
+      </div>
+      <div class="stat-card hadir">
+        <div class="stat-number" id="total-absen">0</div>
+        <div class="stat-label">Siswa Sudah Absen</div>
+      </div>
+    </div>
+
+    <!-- Kelola Kode & Reset -->
+    <div class="card">
+      <h3 style="margin-bottom: 16px; font-size: 1.1rem;">Kelola Kode Absen</h3>
+      
+      <div class="form-group">
+        <label for="custom-kode">KODE ABSEN BARU (CUSTOM) :</label>
+        <input type="text" id="custom-kode" placeholder="Contoh: X2-HADIR-01">
+      </div>
+
+      <button class="btn btn-blue" onclick="buatKodeAbsen()">BUAT KODE ABSEN</button>
+      <div id="code-result" class="code-display" style="display: none;"></div>
+
+      <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+      <button class="btn btn-danger" onclick="hapusSemuaData()">HAPUS / RESET ALL DATA ABSEN</button>
+      <div id="status-msg"></div>
+    </div>
+
+    <!-- Rekap Siswa Absen (Realtime) -->
+    <div class="card">
+      <h3 style="margin-bottom: 12px; font-size: 1.1rem;">Daftar Siswa Sudah Absen</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama Siswa</th>
+              <th>Pelajaran</th>
+              <th>Waktu Absen</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="list-absen">
+            <tr>
+              <td colspan="4" style="text-align: center; color: #94a3b8;">Belum ada siswa yang absen hari ini</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Inisialisasi Supabase
+    const SUPABASE_URL = 'https://atgujhpouptqipcjchlm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0Z3VqaHBvdXB0cWlwY2pjaGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NzI0MzQsImV4cCI6MjEwNDQ0ODQzNH0.BsFpKqtj3sdsnHzJttT_2gDAxyul7ljou5FcU8SnUpc';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Fungsi utama memuat data dari Supabase
+    async function loadInfoAbsen() {
+      try {
+        // 1. Hitung total seluruh siswa di database
+        const { count: countTotal, error: errTotal } = await _supabase
+          .from('presensi')
+          .select('*', { count: 'exact', head: true });
+
+        if (!errTotal && countTotal > 0) {
+          document.getElementById('total-kapasitas').innerText = countTotal;
+        }
+
+        // 2. Ambil daftar siswa yang statusnya 'Hadir'
+        const { data, error } = await _supabase
+          .from('presensi')
+          .select('*')
+          .eq('status', 'Hadir')
+          .order('waktu_absen', { ascending: false });
+
+        if (error) throw error;
+
+        // Update Counter Kanan Atas (Jumlah Siswa Hadir)
+        document.getElementById('total-absen').innerText = data.length;
+
+        // Render data ke tabel
+        const tbody = document.getElementById('list-absen');
+        if (data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8;">Belum ada siswa yang absen hari ini</td></tr>`;
+        } else {
+          tbody.innerHTML = data.map(item => {
+            const jam = new Date(item.waktu_absen).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            return `
+              <tr>
+                <td><b>${item.nama_siswa}</b></td>
+                <td>${item.mata_pelajaran || '-'}</td>
+                <td>${jam} WIB</td>
+                <td><span class="badge-hadir">Hadir</span></td>
+              </tr>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        console.error('Error load data:', err);
+      }
+    }
+
+    // Buat Kode Absen Custom Baru
+    async function buatKodeAbsen() {
+      const kodeInput = document.getElementById('custom-kode').value.trim();
+      const codeResult = document.getElementById('code-result');
+
+      if (!kodeInput) {
+        alert('Masukkan kode absen custom terlebih dahulu!');
+        return;
+      }
+
+      try {
+        const { error } = await _supabase
+          .from('presensi')
+          .update({ kode_akses: kodeInput })
+          .neq('status', 'Hadir');
+
+        if (error) throw error;
+
+        codeResult.style.display = 'block';
+        codeResult.innerText = `KODE AKTIF: ${kodeInput}`;
+        alert('Kode absen berhasil diaktifkan untuk sesi ini!');
+      } catch (err) {
+        console.error(err);
+        alert('Gagal membuat kode baru!');
+      }
+    }
+
+    // Hapus / Reset Data Absen
+    async function hapusSemuaData() {
+      if (!confirm('Apakah kamu yakin ingin mereset seluruh data absensi?')) return;
+
+      try {
+        const { error } = await _supabase
+          .from('presensi')
+          .update({ status: 'Belum Absen', waktu_absen: null })
+          .neq('id', 0);
+
+        if (error) throw error;
+
+        document.getElementById('status-msg').style.color = '#166534';
+        document.getElementById('status-msg').innerText = '✅ Seluruh data absensi berhasil di-reset!';
+        loadInfoAbsen();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('status-msg').style.color = '#ef4444';
+        document.getElementById('status-msg').innerText = '❌ Gagal menghapus data.';
+      }
+    }
+
+    // REALTIME SUPABASE
+    _supabase
+      .channel('public:presensi')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'presensi' }, () => {
+        loadInfoAbsen();
+      })
+      .subscribe();
+
+    // Jalankan saat pertama kali dimuat
+    loadInfoAbsen();
+  </script>
+</body>
+</html>
