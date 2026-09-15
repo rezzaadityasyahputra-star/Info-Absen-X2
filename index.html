@@ -195,7 +195,7 @@
       border-radius: 8px;
       text-align: center;
       font-family: monospace;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: bold;
       color: #0f172a;
       border: 1px dashed #94a3b8;
@@ -275,13 +275,18 @@
       </div>
     </div>
 
-    <!-- Panel Buat Kode & Reset -->
+    <!-- Panel Buat Kode & Set Jam Expired -->
     <div class="card">
-      <h3 style="margin-bottom: 16px; font-size: 1.1rem;">Kelola Kode Absen</h3>
+      <h3 style="margin-bottom: 16px; font-size: 1.1rem;">Kelola Kode & Jam Expired</h3>
       
       <div class="form-group">
         <label for="custom-kode">KODE ABSEN BARU (CUSTOM) :</label>
         <input type="text" id="custom-kode" placeholder="Contoh: X2-HADIR-01">
+      </div>
+
+      <div class="form-group">
+        <label for="custom-expired">BATAS JAM EXPIRED (WIB) :</label>
+        <input type="time" id="custom-expired" value="07:00">
       </div>
 
       <button class="btn btn-blue" onclick="buatKodeAbsen()">BUAT KODE ABSEN</button>
@@ -325,16 +330,7 @@
 
     async function loadInfoAbsen() {
       try {
-        // 1. Ambil total seluruh data siswa
-        const { count: countTotal, error: errTotal } = await _supabase
-          .from('presensi')
-          .select('*', { count: 'exact', head: true });
-
-        if (!errTotal && countTotal > 0) {
-          document.getElementById('total-kapasitas').innerText = countTotal;
-        }
-
-        // 2. Ambil data siswa yang sudah Hadir
+        // 1. Ambil data siswa yang sudah Hadir
         const { data, error } = await _supabase
           .from('presensi')
           .select('*')
@@ -368,27 +364,32 @@
       }
     }
 
-    // Buat Kode Custom
+    // Buat Kode Custom + Jam Expired
     async function buatKodeAbsen() {
       const kodeInput = document.getElementById('custom-kode').value.trim();
+      const expiredInput = document.getElementById('custom-expired').value;
       const codeResult = document.getElementById('code-result');
 
-      if (!kodeInput) {
-        alert('Masukkan kode absen custom terlebih dahulu!');
+      if (!kodeInput || !expiredInput) {
+        alert('Kode dan Batas Jam Expired wajib diisi!');
         return;
       }
 
       try {
+        // Update kode dan jam_expired pada baris system/semua
         const { error } = await _supabase
           .from('presensi')
-          .update({ kode_akses: kodeInput })
-          .neq('status', 'Hadir');
+          .update({ 
+            kode_akses: kodeInput,
+            jam_expired: expiredInput + ':00' 
+          })
+          .neq('id', 0);
 
         if (error) throw error;
 
         codeResult.style.display = 'block';
-        codeResult.innerText = `KODE AKTIF: ${kodeInput}`;
-        alert('Kode absen berhasil diaktifkan!');
+        codeResult.innerText = `KODE AKTIF: ${kodeInput} | EXPIRED: ${expiredInput} WIB`;
+        alert(`Kode "${kodeInput}" diaktifkan hingga jam ${expiredInput} WIB!`);
       } catch (err) {
         console.error(err);
         alert('Gagal membuat kode baru!');
@@ -400,10 +401,11 @@
       if (!confirm('Apakah kamu yakin ingin mereset seluruh data absensi?')) return;
 
       try {
+        // Hapus data siswa (Kecuali baris init system jika ada)
         const { error } = await _supabase
           .from('presensi')
-          .update({ status: 'Belum Absen', waktu_absen: null })
-          .neq('id', 0);
+          .delete()
+          .eq('status', 'Hadir');
 
         if (error) throw error;
 
